@@ -206,40 +206,7 @@
     </div>
 
     <script>
-        // 初始化代码保持不变，新增功能代码
-        let playMode = 'sequence'; // sequence / loop / random
-        let lastRandom = -1;
-
-        function setVolume(value) {
-            audio.volume = value;
-        }
-
-        function togglePlayMode() {
-            const modes = ['sequence', 'loop', 'random'];
-            playMode = modes[(modes.indexOf(playMode) + 1) % 3];
-            document.getElementById('modeBtn').innerHTML = 
-                `${['🔁', '🔂', '🔀'][modes.indexOf(playMode)]} ${['顺序', '单曲', '随机'][modes.indexOf(playMode)]}`;
-        }
-
-        function getNextIndex() {
-            if (playMode === 'random') {
-                let newIndex;
-                do {
-                    newIndex = Math.floor(Math.random() * musicFiles.length);
-                } while (musicFiles.length > 1 && newIndex === lastRandom);
-                lastRandom = newIndex;
-                return newIndex;
-            }
-            return (currentSongIndex + 1) % musicFiles.length;
-        }
-
-        // 修改原来的nextSong函数
-        function nextSong() {
-            currentSongIndex = playMode === 'loop' ? currentSongIndex : getNextIndex();
-            playSong(currentSongIndex);
-        }
-
-        // 保持原有代码...
+                // 保持原有代码...
                 // 替换为你的GitHub音乐文件路径
         const musicFiles = [
             {
@@ -284,6 +251,40 @@
             },
             // 添加更多歌曲...
         ];
+        // 初始化代码保持不变，新增功能代码
+        let playMode = 'sequence'; // sequence / loop / random
+        let lastRandom = -1;
+
+        function setVolume(value) {
+            audio.volume = value;
+        }
+
+        function togglePlayMode() {
+            const modes = ['sequence', 'loop', 'random'];
+            playMode = modes[(modes.indexOf(playMode) + 1) % 3];
+            document.getElementById('modeBtn').innerHTML = 
+                `${['🔁', '🔂', '🔀'][modes.indexOf(playMode)]} ${['顺序', '单曲', '随机'][modes.indexOf(playMode)]}`;
+        }
+
+        function getNextIndex() {
+            if (playMode === 'random') {
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * musicFiles.length);
+                } while (musicFiles.length > 1 && newIndex === lastRandom);
+                lastRandom = newIndex;
+                return newIndex;
+            }
+            return (currentSongIndex + 1) % musicFiles.length;
+        }
+
+        // 修改原来的nextSong函数
+        function nextSong() {
+            currentSongIndex = playMode === 'loop' ? currentSongIndex : getNextIndex();
+            playSong(currentSongIndex);
+        }
+
+
 
         // [此处保留原有的JavaScript代码，只需替换nextSong函数并添加上述新功能]
     </script>
