@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub音乐播放器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .player-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2ea44f;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #22863a;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            height: 5px;
+            background-color: #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #2ea44f;
+            width: 0%;
+            border-radius: 5px;
+        }
+
+        .playlist {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .playlist-item {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .playlist-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .current-song {
+            background-color: #e7f4e4;
+            font-weight: bold;
+        }
+
+        .time-display {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div id="now-playing">选择歌曲开始播放</div>
+        <div class="controls">
+            <button onclick="previousSong()">上一首</button>
+            <button onclick="togglePlay()" id="playBtn">播放</button>
+            <button onclick="nextSong()">下一首</button>
+            <div class="progress-container" onclick="seek(event)">
+                <div class="progress-bar" id="progress"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span> / 
+                <span id="totalTime">0:00</span>
+            </div>
+        </div>
+        <div class="playlist" id="playlist"></div>
+    </div>
+
+    <script>
+        // 替换为你的GitHub音乐文件路径
+        const musicFiles = [
+            {
+                title: "歌曲1",
+                url: "https://raw.githubusercontent.com/你的用户名/你的仓库名/main/音乐路径/歌曲1.mp3"
+            },
+            {
+                title: "歌曲2",
+                url: "https://raw.githubusercontent.com/你的用户名/你的仓库名/main/音乐路径/歌曲2.mp3"
+            }
+            // 添加更多歌曲...
+        ];
+
+        let currentSongIndex = 0;
+        const audio = new Audio();
+        let isPlaying = false;
+
+        // 初始化播放列表
+        function initPlaylist() {
+            const playlist = document.getElementById('playlist');
+            musicFiles.forEach((song, index) => {
+                const div = document.createElement('div');
+                div.className = 'playlist-item';
+                div.textContent = `${index + 1}. ${song.title}`;
+                div.onclick = () => playSong(index);
+                playlist.appendChild(div);
+            });
+        }
+
+        function playSong(index) {
+            currentSongIndex = index;
+            audio.src = musicFiles[index].url;
+            audio.play();
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '暂停';
+            updatePlaylistStyles();
+            document.getElementById('now-playing').textContent = `正在播放: ${musicFiles[index].title}`;
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                document.getElementById('playBtn').textContent = '播放';
+            } else {
+                audio.play();
+                document.getElementById('playBtn').textContent = '暂停';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % musicFiles.length;
+            playSong(currentSongIndex);
+        }
+
+        function previousSong() {
+            currentSongIndex = (currentSongIndex - 1 + musicFiles.length) % musicFiles.length;
+            playSong(currentSongIndex);
+        }
+
+        function updateProgress() {
+            const progress = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+            document.getElementById('totalTime').textContent = formatTime(audio.duration);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            seconds = Math.floor(seconds % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function seek(event) {
+            const rect = event.target.getBoundingClientRect();
+            const pos = (event.clientX - rect.left) / rect.width;
+            audio.currentTime = pos * audio.duration;
+        }
+
+        function updatePlaylistStyles() {
+            document.querySelectorAll('.playlist-item').forEach((item, index) => {
+                item.classList.toggle('current-song', index === currentSongIndex);
+            });
+        }
+
+        // 事件监听
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', nextSong);
+
+        // 初始化
+        initPlaylist();
+    </script>
+</body>
+</html>
