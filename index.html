@@ -17,8 +17,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(-45deg, #9ad3ff, #89c9ff, #6bb5ff, #4a90e2);
-            background-size: 400% 400%;
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
             animation: gradientBG 15s ease infinite;
         }
 
@@ -38,19 +37,174 @@
             backdrop-filter: blur(10px);
         }
 
-        /* 保持原有样式不变... */
-        /* 完整样式请参考之前的版本，此处为节省空间已省略重复样式 */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, auto) 1fr;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
 
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: var(--main-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--hover-color);
+            transform: translateY(-2px);
+        }
+
+        .progress-container {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            grid-column: 1 / -1;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--main-color);
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+
+        .playlist {
+            margin-top: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .playlist-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .playlist-item:hover {
+            background: #f5fbff;
+        }
+
+        .current-song {
+            background: #e3f2fd !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .time-display {
+            color: #666;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            width: 100px;
+            height: 5px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: var(--main-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .mode-switch {
+            background: none;
+            border: 2px solid var(--main-color);
+            color: var(--main-color);
+            padding: 8px 12px;
+        }
+
+        .visualizer {
+            height: 60px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visualizer-bar {
+            position: absolute;
+            bottom: 0;
+            width: 8px;
+            height: 20%;
+            background: var(--main-color);
+            border-radius: 4px 4px 0 0;
+            animation: visualizer 0.8s ease infinite alternate;
+        }
+
+        @keyframes visualizer {
+            from { height: 20%; }
+            to { height: 80%; }
+        }
     </style>
 </head>
 <body>
-    <!-- 保持原有HTML结构不变 -->
     <div class="player-container">
-        <!-- 原有HTML结构保持不变 -->
+        <div class="visualizer">
+            <div class="visualizer-bar" style="left: 20%"></div>
+            <div class="visualizer-bar" style="left: 40%"></div>
+            <div class="visualizer-bar" style="left: 60%"></div>
+            <div class="visualizer-bar" style="left: 80%"></div>
+        </div>
+        
+        <div id="now-playing">🎵 选择歌曲开始播放</div>
+        
+        <div class="controls">
+            <button onclick="previousSong()">⏮ 上一首</button>
+            <button onclick="togglePlay()" id="playBtn">▶ 播放</button>
+            <button onclick="nextSong()">⏭ 下一首</button>
+            
+            <div class="volume-control">
+                <span>🔊</span>
+                <input type="range" id="volume" min="0" max="1" step="0.1" value="1" oninput="setVolume(this.value)">
+            </div>
+
+            <button class="mode-switch" onclick="togglePlayMode()" id="modeBtn">🔁 顺序</button>
+        </div>
+
+        <div class="progress-container" onclick="seek(event)">
+            <div class="progress-bar" id="progress"></div>
+        </div>
+        
+        <div class="time-display">
+            <span id="currentTime">0:00</span>
+            <span id="totalTime">0:00</span>
+        </div>
+
+        <div class="playlist" id="playlist"></div>
     </div>
 
     <script>
-        // 音乐文件配置
         const musicFiles = [
             {
                 title: "红昭愿",
@@ -69,15 +223,12 @@
                 url: "https://raw.githubusercontent.com/michael9207/music_player/main/music/cure%20for%20me.mp3"
             }
         ];
-
-        // 播放器核心逻辑
+        
         let currentSongIndex = 0;
-        let playMode = 'sequence'; // sequence/loop/random
-        let lastRandom = -1;
         const audio = new Audio();
         let isPlaying = false;
+        let playMode = 'sequence'; // 默认顺序播放
 
-        // DOM元素初始化
         function initPlaylist() {
             const playlist = document.getElementById('playlist');
             playlist.innerHTML = '';
@@ -90,102 +241,9 @@
             });
         }
 
-        // 播放控制
         function playSong(index) {
             currentSongIndex = index;
             audio.src = musicFiles[index].url;
-            audio.play().catch(error => console.error('播放失败:', error));
+            audio.play();
             isPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸ 暂停';
-            updatePlaylistStyles();
-            document.getElementById('now-playing').textContent = `🎵 正在播放: ${musicFiles[index].title}`;
-        }
-
-        function togglePlay() {
-            if (isPlaying) {
-                audio.pause();
-                document.getElementById('playBtn').textContent = '▶ 播放';
-            } else {
-                audio.play();
-                document.getElementById('playBtn').textContent = '⏸ 暂停';
-            }
-            isPlaying = !isPlaying;
-        }
-
-        // 进度控制
-        function updateProgress() {
-            const progress = (audio.currentTime / audio.duration) * 100 || 0;
-            document.getElementById('progress').style.width = `${progress}%`;
-            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
-            document.getElementById('totalTime').textContent = formatTime(audio.duration);
-        }
-
-        function seek(event) {
-            const rect = event.target.getBoundingClientRect();
-            const pos = (event.clientX - rect.left) / rect.width;
-            audio.currentTime = pos * audio.duration;
-        }
-
-        // 播放模式
-        function togglePlayMode() {
-            const modes = ['sequence', 'loop', 'random'];
-            playMode = modes[(modes.indexOf(playMode) + 1) % 3];
-            document.getElementById('modeBtn').innerHTML = 
-                `${['🔁', '🔂', '🔀'][modes.indexOf(playMode)]} ${['顺序', '单曲', '随机'][modes.indexOf(playMode)]}`;
-        }
-
-        function getNextIndex() {
-            if (playMode === 'random') {
-                let newIndex;
-                do {
-                    newIndex = Math.floor(Math.random() * musicFiles.length);
-                } while (musicFiles.length > 1 && newIndex === lastRandom);
-                lastRandom = newIndex;
-                return newIndex;
-            }
-            return (currentSongIndex + 1) % musicFiles.length;
-        }
-
-        // 曲目切换
-        function nextSong() {
-            currentSongIndex = playMode === 'loop' ? currentSongIndex : getNextIndex();
-            playSong(currentSongIndex);
-        }
-
-        function previousSong() {
-            currentSongIndex = (currentSongIndex - 1 + musicFiles.length) % musicFiles.length;
-            playSong(currentSongIndex);
-        }
-
-        // 工具函数
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            seconds = Math.floor(seconds % 60);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        function updatePlaylistStyles() {
-            document.querySelectorAll('.playlist-item').forEach((item, index) => {
-                item.classList.toggle('current-song', index === currentSongIndex);
-            });
-        }
-
-        // 音量控制
-        function setVolume(value) {
-            audio.volume = value;
-        }
-
-        // 事件监听
-        audio.addEventListener('timeupdate', updateProgress);
-        audio.addEventListener('ended', nextSong);
-        audio.addEventListener('error', (e) => {
-            console.error('播放错误:', e);
-            alert(`无法播放 ${musicFiles[currentSongIndex].title}`);
-        });
-
-        // 初始化
-        initPlaylist();
-        audio.volume = document.getElementById('volume').value;
-    </script>
-</body>
-</html>
+            document.getElementById('playBtn').textContent = '⏸ 暂
