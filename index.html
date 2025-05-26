@@ -35,7 +35,6 @@
             width: 90%;
             max-width: 600px;
             backdrop-filter: blur(10px);
-            transition: transform 0.3s ease;
         }
 
         .controls {
@@ -180,20 +179,6 @@
             from { height: 20%; }
             to { height: 80%; }
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes scaleUp {
-            from { transform: scale(0.9); }
-            to { transform: scale(1); }
-        }
-
-        .player-container {
-            animation: fadeIn 1s ease forwards, scaleUp 1s ease forwards;
-        }
     </style>
 </head>
 <body>
@@ -257,6 +242,7 @@
         const audio = new Audio();
         let isPlaying = false;
         let playMode = 'sequence'; // 默认顺序播放
+        let nextAudio = new Audio(); // 用于预加载下一首歌曲
 
         function initPlaylist() {
             const playlist = document.getElementById('playlist');
@@ -273,11 +259,13 @@
         function playSong(index) {
             currentSongIndex = index;
             audio.src = musicFiles[index].url;
+            audio.load(); // 确保加载当前歌曲
             audio.play();
             isPlaying = true;
             document.getElementById('playBtn').textContent = '⏸ 暂停';
             updatePlaylistStyles();
             document.getElementById('now-playing').textContent = `🎵 正在播放: ${musicFiles[index].title}`;
+            preloadNextSong(); // 预加载下一首歌曲
         }
 
         function togglePlay() {
@@ -370,6 +358,12 @@
                 const percent = (end / audio.duration) * 100;
                 buffer.style.width = `${percent}%`;
             }
+        }
+
+        function preloadNextSong() {
+            const nextIndex = (currentSongIndex + 1) % musicFiles.length;
+            nextAudio.src = musicFiles[nextIndex].url;
+            nextAudio.load(); // 预加载下一首歌曲
         }
 
         audio.addEventListener('timeupdate', updateProgress);
