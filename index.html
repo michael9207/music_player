@@ -246,4 +246,119 @@
             playlist.innerHTML = '';
             musicFiles.forEach((song, index) => {
                 const div = document.createElement('div');
-                div.className = '
+                div.className = 'playlist-item';
+                div.textContent = `${index + 1}. ${song.title}`;
+                div.onclick = () => playSong(index);
+                playlist.appendChild(div);
+            });
+        }
+
+        function playSong(index) {
+            currentSongIndex = index;
+            audio.src = musicFiles[index].url;
+            audio.play();
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸ 暂停';
+            updatePlaylistStyles();
+            document.getElementById('now-playing').textContent = `🎵 正在播放: ${musicFiles[index].title}`;
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                document.getElementById('playBtn').textContent = '▶ 播放';
+            } else {
+                audio.play();
+                document.getElementById('playBtn').textContent = '⏸ 暂停';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function nextSong() {
+            if (playMode === 'sequence') {
+                currentSongIndex = (currentSongIndex + 1) % musicFiles.length;
+            } else if (playMode === 'repeat') {
+                currentSongIndex = currentSongIndex;
+            } else if (playMode === 'shuffle') {
+                currentSongIndex = Math.floor(Math.random() * musicFiles.length);
+            }
+            playSong(currentSongIndex);
+        }
+
+        function previousSong() {
+            if (playMode === 'sequence') {
+                currentSongIndex = (currentSongIndex - 1 + musicFiles.length) % musicFiles.length;
+            } else if (playMode === 'repeat') {
+                currentSongIndex = currentSongIndex;
+            } else if (playMode === 'shuffle') {
+                currentSongIndex = Math.floor(Math.random() * musicFiles.length);
+            }
+            playSong(currentSongIndex);
+        }
+
+        function updateProgress() {
+            const progress = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+            document.getElementById('totalTime').textContent = formatTime(audio.duration);
+        }
+
+        function formatTime(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        }
+
+        function setVolume(value) {
+            audio.volume = value;
+        }
+
+        function togglePlayMode() {
+            if (playMode === 'sequence') {
+                playMode = 'repeat';
+                document.getElementById('modeBtn').textContent = '🔂 单曲循环';
+            } else if (playMode === 'repeat') {
+                playMode = 'shuffle';
+                document.getElementById('modeBtn').textContent = '🔀 随机播放';
+            } else {
+                playMode = 'sequence';
+                document.getElementById('modeBtn').textContent = '🔁 顺序播放';
+            }
+        }
+
+        function updatePlaylistStyles() {
+            const playlistItems = document.querySelectorAll('.playlist-item');
+            playlistItems.forEach((item, index) => {
+                if (index === currentSongIndex) {
+                    item.classList.add('current-song');
+                } else {
+                    item.classList.remove('current-song');
+                }
+            });
+        }
+
+        function seek(event) {
+            const progressContainer = document.querySelector('.progress-container');
+            const totalWidth = progressContainer.offsetWidth;
+            const clickX = event.offsetX;
+            const newTime = (clickX / totalWidth) * audio.duration;
+            audio.currentTime = newTime;
+        }
+
+        function updateBuffer() {
+            const buffer = document.getElementById('buffer');
+            const buffered = audio.buffered;
+            if (buffered.length > 0) {
+                const end = buffered.end(buffered.length - 1);
+                const percent = (end / audio.duration) * 100;
+                buffer.style.width = `${percent}%`;
+            }
+        }
+
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('progress', updateBuffer);
+        audio.addEventListener('ended', nextSong);
+        initPlaylist();
+    </script>
+</body>
+</html>
